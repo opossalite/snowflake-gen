@@ -1,1 +1,0 @@
-input = input("enter wheel diameter")
