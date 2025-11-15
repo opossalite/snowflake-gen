@@ -38,6 +38,52 @@ impl CoreHex {
             ],
         }
     }
+
+    pub fn follow_path(&mut self, path: Vec<Direction>) -> Result<&mut Hex, ()> {
+        let mut hex = &mut self.hex;
+        for direction in path {
+            match direction {
+                Direction::Top => {
+                    match &mut hex.top {
+                        HexWrapper::Affinity(_) => return Err(()),
+                        HexWrapper::Hex(inner) => hex = inner,
+                    }
+                },
+                Direction::TopLeft => {
+                    match &mut hex.topl {
+                        HexWrapper::Affinity(_) => return Err(()),
+                        HexWrapper::Hex(inner) => hex = inner,
+                    }
+                },
+                Direction::TopRight => {
+                    match &mut hex.topr {
+                        HexWrapper::Affinity(_) => return Err(()),
+                        HexWrapper::Hex(inner) => hex = inner,
+                    }
+                },
+                Direction::BottomLeft => {
+                    match &mut hex.botl {
+                        HexWrapper::Affinity(_) => return Err(()),
+                        HexWrapper::Hex(inner) => hex = inner,
+                    }
+                },
+                Direction::BottomRight => {
+                    match &mut hex.botr {
+                        HexWrapper::Affinity(_) => return Err(()),
+                        HexWrapper::Hex(inner) => hex = inner,
+                    }
+                },
+                Direction::Bottom => {
+                    match &mut hex.bot {
+                        HexWrapper::Affinity(_) => return Err(()),
+                        HexWrapper::Hex(inner) => hex = inner,
+                    }
+                },
+            }
+        }
+        return Ok(hex);
+
+    }
 }
 
 pub struct Hex {
