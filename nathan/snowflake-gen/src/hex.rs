@@ -1,9 +1,11 @@
+/// Used on all six sides of a Hex
 pub enum HexWrapper {
     Affinity(usize),
     Hex(Box<Hex>),
     Blocked,
 }
 
+/// Simple enum for simplification
 pub enum Direction {
     Top,
     TopLeft,
@@ -13,6 +15,29 @@ pub enum Direction {
     Bottom,
 }
 
+/// Fundamental struct used for a snowflake
+pub struct Hex {
+    top: HexWrapper,
+    top_left: HexWrapper,
+    top_right: HexWrapper,
+    bottom_left: HexWrapper,
+    bottom_right: HexWrapper,
+    bottom: HexWrapper,
+}
+impl Hex {
+    pub fn retrieve(&mut self, direction: &Direction) -> &mut HexWrapper {
+        match direction {
+            Direction::Top => &mut self.top,
+            Direction::TopLeft => &mut self.top_left,
+            Direction::TopRight => &mut self.top_right,
+            Direction::BottomLeft => &mut self.bottom_left,
+            Direction::BottomRight => &mut self.bottom_right,
+            Direction::Bottom => &mut self.bottom,
+        }
+    }
+}
+
+/// Stores the core of the snowflake and all its info
 pub struct CoreHex {
     hex: Hex,
     leaves: Vec<Vec<Direction>>,
@@ -30,16 +55,7 @@ impl CoreHex {
         };
         CoreHex {
             hex,
-            //all six directions are open by default, last direction is unused for path
-            // but directions are not included, so empty at first
-            leaves: vec![
-                //vec![Direction::Top],
-                //vec![Direction::TopLeft],
-                //vec![Direction::TopRight],
-                //vec![Direction::BottomLeft],
-                //vec![Direction::BottomRight],
-                //vec![Direction::Bottom],
-            ],
+            leaves: vec![],
             size: 0,
         }
     }
@@ -72,36 +88,4 @@ impl CoreHex {
         return None;
     }
 }
-
-pub struct Hex {
-    top: HexWrapper,
-    top_left: HexWrapper,
-    top_right: HexWrapper,
-    bottom_left: HexWrapper,
-    bottom_right: HexWrapper,
-    bottom: HexWrapper,
-}
-impl Hex {
-    pub fn retrieve(&mut self, direction: &Direction) -> &mut HexWrapper {
-        match direction {
-            Direction::Top => &mut self.top,
-            Direction::TopLeft => &mut self.top_left,
-            Direction::TopRight => &mut self.top_right,
-            Direction::BottomLeft => &mut self.bottom_left,
-            Direction::BottomRight => &mut self.bottom_right,
-            Direction::Bottom => &mut self.bottom,
-        }
-    }
-
-
-
-    ///// Insert a new hexagon off of this hexagon, considering the path and the total number of hexagons
-    //pub fn insert(&mut self, direction: Direction, path: Vec<Direction>, total: usize) {
-    //    let end_hex = 
-    //}
-}
-
-
-
-
 
