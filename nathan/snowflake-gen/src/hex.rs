@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use crate::coordinate_grid::CoordinateGrid;
+
 /// Gets subtracted for progressing further from the hex core
 const PROGRESSION_SUBTRACTION: usize = 5;
 const BRANCH_MULTIPLIER: f64 = 0.5;
@@ -91,7 +93,7 @@ impl Hex {
 pub struct CoreHex {
     hex: Hex,
     leaves: Vec<Vec<Direction>>,
-    coordinate_map: HashMap<(f64, f64), Vec<Direction>>,
+    coordinate_grid: CoordinateGrid,
 }
 impl CoreHex {
     pub fn new() -> Self {
@@ -106,7 +108,7 @@ impl CoreHex {
         CoreHex {
             hex,
             leaves: vec![],
-            coordinate_map: HashMap::new(),
+            coordinate_grid: CoordinateGrid::new(),
         }
     }
 
@@ -131,15 +133,15 @@ impl CoreHex {
     }
 
     /// Check hexagons around a new hex to ensure blocks are properly updated
-    pub fn check_blocks(&mut self, new_hex_path: Vec<Direction>) -> Option<()> {
+    pub fn update_blocks(&mut self, new_hex_path: &Vec<Direction>) -> Option<()> {
         // check all six directions and update both this and other hexes
         // but how to find other hexes? we don't exactly have a universal grid
-        // use the new coordinate_map!
+        // use the new coordinate_grid!
         return Some(());
     }
 
-    /// Insert a new hexagon
-    pub fn insert(&mut self, source_hex_path: Vec<Direction>, direction: Direction) -> Option<()> {
+    /// Insert a new hexagon, returns the new path
+    pub fn insert(&mut self, source_hex_path: &Vec<Direction>, direction: Direction) -> Option<Vec<Direction>> {
         // assumption is that the path is not blocked, because it shouldn't be
 
         // first generate affinities
@@ -177,13 +179,17 @@ impl CoreHex {
         }));
         source_hex.set_direction(&direction, new_hex);
 
-        // update the coordinate map
-        // AAAAAA FLOATS FUCKING SUCK
-        //self.coordinate_map.insert();
+        // update the coordinate grid
+        let new_offset = direction.to_offset();
+        let new_coords = (source_x + new_offset.0, source_y + new_offset.1);
+        let mut new_path = source_hex_path.clone();
+        new_path.push(direction);
+        self.coordinate_grid.insert(new_coords, new_path.clone());
 
         // update blocks (for this new hex and existing hexes)
+        self.update_blocks(&new_path);
 
-        return None;
+        return Some(new_path);
     }
 }
 
