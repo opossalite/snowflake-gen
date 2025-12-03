@@ -5,6 +5,7 @@ import adsk.core, adsk.fusion, traceback
 
 radius = 4
 depth = 1
+depth_cm = 1 * 2.54
 
 def run(context):
     ui = None
@@ -22,6 +23,8 @@ def run(context):
         root = design.rootComponent
 
         extrudes = root.features.extrudeFeatures
+
+        # surface_feats = root.features.surfaceFeatures
 
         """ I think this broke because we are trying to create a parameter
         (like a fusion variable kinda) that already exists, and we need to
@@ -50,13 +53,71 @@ def run(context):
             radius
         )
 
+        # distance = adsk.core.ValueInput.createByString("1 in")
+
+        #looks like this does cm by default. createbyreal probabaly easier to use overall
+        extrude_distance = adsk.core.ValueInput.createByReal(depth_cm)
+
         circle_profile = sketch_1.profiles.item(0)
 
-        extrude1 = extrudes.addSimple(circle_profile, depth, adsk.fusion.FeatureOperations.NewBodyFeatureOperation) 
+        # chatgpt's way (works too): 
+        # ext_input = extrudes.createInput(circle_profile, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
+        # ext_input.setDistanceExtent(False, distance)
+        # extrude1 = extrudes.add(ext_input)
 
+        # note: MAKE SURE DIMENSION INPUTS ARE VALUEINPUTS
+        extrude1 = extrudes.addSimple(circle_profile, extrude_distance, adsk.fusion.FeatureOperations.NewBodyFeatureOperation) 
+        
         body1 = extrude1.bodies.item(0)
 
         body1.name = "body name test"
+
+        # messing with lines
+        # note: for some reason VScode isn't autofilling/recognizing sketchLines
+        sketch_2 = root.sketches.add(root.xYConstructionPlane)
+        sketch_2.name = "snowflake base sketch 2"
+
+        sketch2Lines = sketch_2.sketchCurves.sketchLines
+
+        #we will need to make an algorithm to spit out a bunch of points, then put them all into point32.create()
+        p1 = adsk.core.Point3D.create(0, 0, 0)
+        p2 = adsk.core.Point3D.create(5, 0, 0)
+
+        line = sketch2Lines.addByTwoPoints(p1, p2)
+
+        patches = root.features.patchFeatures
+        patchInput = patches.createInput(line, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
+
+        # Create an ObjectCollection of curves
+        curveCollection = adsk.core.ObjectCollection.create()
+        curveCollection.add(line)
+
+        # Tell the patch feature to use the curves
+        # patchInput.bRepEdges = curveCollection
+
+        # Create the surface
+        patchFeatures = patches.add(patchInput)
+
+        # line_ext_dist = adsk.core.ValueInput.createByReal(6)
+
+        # surface_extrudes = surface_feats.extrudeSurfaceFeatures
+
+        # curves = adsk.core.ObjectCollection.create()
+        # for line in sketch2Lines:
+        #     curves.add(line)
+
+        # extrude_input = extrudes.createInputFromEdges(
+        #     curves,
+        #     adsk.fusion.FeatureOperations.NewBodyFeatureOperation
+        # )
+
+        # extrude_input.setDistanceExtent(False, line_ext_dist)
+
+        # line_extrude = extrudes.add(extrude_input)
+
+        # surface_body = line_extrude.bodes.item(0)
+
+        # surface_body.name = "extruded surface"
 
         ui.messageBox('Snowflake base created successfully.')
 
