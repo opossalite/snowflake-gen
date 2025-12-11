@@ -1,4 +1,4 @@
-import adsk.core, adsk.fusion, traceback
+import adsk.core, adsk.fusion, traceback, tempfile
 
 # https://help.autodesk.com/view/fusion360/ENU/?guid=GUID-CB1A2357-C8CD-474D-921E-992CA3621D04
 # the code is the same as this above example (I think) but is not working
@@ -6,6 +6,19 @@ import adsk.core, adsk.fusion, traceback
 radius = 4
 depth = 1
 depth_cm = 1 * 2.54
+
+# [[[x, y]]] or some other coordinate, doesn't matter
+
+class SnowflakeLine:
+    def __init__(self, p1x, p1y, p2x, p2y):
+        self.p1x = p1x
+        self.p1y = p1y
+        self.p2x = p2x
+        self.p2y = p2y
+
+snowflake_lines = [SnowflakeLine(0,0,5,0), SnowflakeLine(5,0,6,1), SnowflakeLine(5,0,6,-1)]
+
+# test_line_coords = [[[0,0], [1,0]], [[1,0],[2,1]]]
 
 def run(context):
     ui = None
@@ -19,6 +32,8 @@ def run(context):
         if not isinstance(design, adsk.fusion.Design):
             ui.messageBox('Please switch to Design workspace first.')
             return
+        
+        export_manager = design.exportManager
 
         root = design.rootComponent
 
@@ -48,26 +63,39 @@ def run(context):
 
         sketch2Lines = sketch_2.sketchCurves.sketchLines
 
-        #we will need to make an algorithm to spit out a bunch of points, then put them all into point32.create()
-        p1 = adsk.core.Point3D.create(0, 0, 0)
-        p2 = adsk.core.Point3D.create(5, 0, 0)
+        #we will need to make an algorithm to spit out a bunch of points, then put them all into point3D.create()
+        # p1 = adsk.core.Point3D.create(0, 0, 0)
+        # p2 = adsk.core.Point3D.create(5, 0, 0)
 
-        line = sketch2Lines.addByTwoPoints(p1, p2) # eventually will be for every line in the shape
+        # test_line = sketch2Lines.addByTwoPoints(p1, p2) # eventually will be for every line in the shape
+
+        line_collection = adsk.core.ObjectCollection.create()
+
+        for snowflake_line in snowflake_lines:
+            p1 = adsk.core.Point3D.create(snowflake_line.p1x, snowflake_line.p1y, 0)
+            p2 = adsk.core.Point3D.create(snowflake_line.p2x, snowflake_line.p2y, 0)
+            new_line = sketch2Lines.addByTwoPoints(p1, p2)
 
         # # https://help.autodesk.com/view/fusion360/ENU/?guid=GUID-536A4E7D-AA90-4ACB-9378-009993C59FF2
         # # Have the profile selected.
         filter =  adsk.core.SelectionCommandInput.SketchCurves
-        curve = ui.selectEntity('Select a profile', filter).entity
+        # curve = ui.selectEntity('Select a profile', filter).entity
 
-        profile1 = root.createOpenProfile(curve)
+        profile_collection = adsk.core.ObjectCollection.create()
 
+        for line in sketch2Lines:
+            line_collection.add(line)
+            profile = root.createOpenProfile(line)
+            profile_collection.add(profile)
+            
+    
         # Define the required input.
         extrudeFeatures = root.features.extrudeFeatures
         operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
-        input = extrudeFeatures.createInput(profile1, operation)
+        input = extrudeFeatures.createInput(profile_collection, operation)
         wallLocation = adsk.fusion.ThinExtrudeWallLocation.Center
-        wallThickness = adsk.core.ValueInput.createByString("2 mm")
-        distance = adsk.core.ValueInput.createByString("100 mm")
+        wallThickness = adsk.core.ValueInput.createByString("0.125 in")
+        distance = adsk.core.ValueInput.createByString("0.0625 in")
         isFullLength = True
         input.setSymmetricExtent(distance, isFullLength)
         input.setThinExtrude(wallLocation, wallThickness)
@@ -77,9 +105,7 @@ def run(context):
 
         extrude_bodies = extrudeFeature.bodies
 
-        # fix with this:
         # https://forums.autodesk.com/t5/fusion-api-and-scripts-forum/thin-extrude-an-open-profile-via-api/td-p/11566052
-        # selectedBody = ui.selectEntity('Select a body', 'Bodies').entity
 
         cirPatternInputEntities = adsk.core.ObjectCollection.create()
 
@@ -98,26 +124,53 @@ def run(context):
         
         cir_pattern = cirPatternFeatures.add(cirPatternInput)
 
-        targetBody = ui.selectEntity('Select a body', 'Bodies').entity
-        toolBody = ui.selectEntity('Select Bodies', 'Bodies').entity
+        pattern_bodies = cir_pattern.bodies
 
-        
+        tool_bodies = adsk.core.ObjectCollection.create()
 
-        # # Define the required inputs and create te combine feature.
-        # combineFeatures = root.features.combineFeatures
-        # tools = adsk.core.ObjectCollection.create()
-        # tools.add(toolBody)
-        # input: adsk.fusion.CombineFeatureInput = combineFeatures.createInput(targetBody, tools)
-        # input.isNewComponent = False
-        # input.isKeepToolBodies = False
-        # input.operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
-        # combineFeature = combineFeatures.add(input)
+        target_added = False
+
+        for body in pattern_bodies:
+            if target_added == False:
+                target_body = body #put the first one as the target ... I guess
+            if target_added == True:
+                tool_bodies.add(body)
+
+        # msg = str(type(tool_bodies)) # collection as is required
+        # msg2 = str(type(target_body)) #brepbody as is required
+
+        # ui.messageBox(msg) 
+        # ui.messageBox(msg2)
+
+        # Define the required inputs and create te combine feature.
+
+        # targetBody = ui.selectEntity('Select a body', 'Bodies').entity
+
+        combineFeatures = root.features.combineFeatures
+
+        combine_input: adsk.fusion.CombineFeatureInput = combineFeatures.createInput(target_body, tool_bodies)
+        combine_input.isNewComponent = False
+        combine_input.isKeepToolBodies = False
+        combine_input.operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
+        # combineFeature = combineFeatures.add(combine_input) #hmm, still breaking
+
+        ## INCLUDING THIS MAKES IT NOT RUN AT ALL??
+        ## tmp_dir = tempfile.gettempdir()
+
+        # comp = root
+
+        # stl_options = export_manager.createSTLExportOptions(comp, "C:\Users\samso\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\Scripts\snowflake-gen\export_test\comp.stl")
+
+        # export = export_manager.execute(stl_options)
 
         ui.messageBox('Snowflake base created successfully.')
 
     except:
         if ui:
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
+
+
 
 
         """
