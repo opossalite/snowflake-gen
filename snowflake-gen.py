@@ -13,7 +13,7 @@ depth_cm = 1 * 2.54
 
 arm_length_input = 5
 
-hole_offset = 0.1
+hole_offset = 0.15
 
 # [[[x, y]]] or some other coordinate, doesn't matter
 
@@ -103,7 +103,7 @@ def run(context):
         app = adsk.core.Application.get()
         ui  = app.userInterface
         
-        ui.messageBox('Snowflake Script Running...')
+        # ui.messageBox('Snowflake Script Running...')
 
         design = app.activeProduct
         if not isinstance(design, adsk.fusion.Design):
@@ -229,6 +229,15 @@ def run(context):
 
         hole_center = adsk.core.Point3D.create(0, hole_distance, 0)
 
+        reinforcement_sketch = root.sketches.add(root.xYConstructionPlane)
+        reinforcement_sketch.name = "mounting hole reinforcement"
+
+        reinforcementSketchCircles = reinforcement_sketch.sketchCurves.sketchCircles
+
+        reinforcementSketchCircles.addByCenterRadius(hole_center, .15)
+
+        reinforcement_extrude = extrudes.addSimple(reinforcement_sketch.profiles.item(0), adsk.core.ValueInput.createByReal(0.1), adsk.fusion.FeatureOperations.JoinFeatureOperation)
+
         hole_sketch = root.sketches.add(root.xYConstructionPlane)
         hole_sketch.name = "hanger hole sketch"
 
@@ -251,7 +260,7 @@ def run(context):
 
         # export = export_manager.execute(stl_options)
 
-        ui.messageBox('Snowflake base created successfully.')
+        # ui.messageBox('Snowflake base created successfully.')
 
     except:
         if ui:
