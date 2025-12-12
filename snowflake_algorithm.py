@@ -17,11 +17,7 @@ import matplotlib.pyplot as plt
 
 # def generate(min_D, max_D):
 
-def generate_snowflake_arm(
-        arm_length=10.0,
-        num_segments=24,
-        base_branch_length=2.0,
-        base_branch_probability=.8):
+def generate(arm_length=10.0, num_segments=24, base_branch_length=2.0, base_branch_probability=.8):
     """
     Generates a single snowflake arm that is perfectly symmetrical
     about the central axis. Sub‑branches become shorter and less common
@@ -78,13 +74,18 @@ def generate_snowflake_arm(
     return segments
 
 
-# -------- VISUALIZE --------
-segments = generate_snowflake_arm()
+test = generate()
 
-plt.figure(figsize=(5,10))
-for (p1, p2) in segments:
-    plt.plot([p1[0], p2[0]], [p1[1], p2[1]], 'b-')
+print(test)
 
-plt.gca().set_aspect('equal', 'box')
-plt.title("Symmetrical Snowflake Arm\n(Shorter Branches Near Tip)")
-plt.show()
+
+    # -------- VISUALIZE --------
+    # segments = generate_snowflake_arm()
+
+    # plt.figure(figsize=(5,10))
+    # for (p1, p2) in segments:
+    #     plt.plot([p1[0], p2[0]], [p1[1], p2[1]], 'b-')
+
+    # plt.gca().set_aspect('equal', 'box')
+    # plt.title("Symmetrical Snowflake Arm\n(Shorter Branches Near Tip)")
+    # plt.show()
